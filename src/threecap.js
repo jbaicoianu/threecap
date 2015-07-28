@@ -14,6 +14,8 @@ function THREEcap(args) {
     this.quality = args.quality || 'veryfast';
     this.useWorker = args.useWorker || false;
     this.inWorker = args.inWorker || false;
+    this.srcformat = 'raw';
+    this.dstformat = 'mp4';
     this.scriptbase = args.scriptbase || '';
 
     console.log('new THREEcap instance', this.useWorker, this.inWorker);
@@ -42,23 +44,91 @@ THREEcap.prototype.getFrame = function() {
     var frame = this.framepool.getFrame();
     return frame;
 };
-THREEcap.prototype.addFrame = function(frame) {
-    if (frame instanceof ImageData) {
-        frame = new THREEcapFrame(frame);
-    }
-    if (this.useWorker && !this.inWorker) {
-        var msg = {
-            type: 'add_frame',
-            frame: frame
-        };
-        this.worker.postMessage(msg, [msg.frame.buffer]);
-    } else {
-        //console.log('add frame', this.frames.length, frame.width + 'x' + frame.height);
-        var compressed = this.getCompressedFrame(frame);
-        this.frames.push(compressed);
-        this.releaseFrame(frame);
+THREEcap.prototype.addFrame = function(frame, usepool) {
+    //var frame = this.getFrameFromData(framedata);
+   //console.log('addframe', frame, frame.buffer.byteLength); 
+    if (frame) {
+        if (this.useWorker && !this.inWorker) {
+            var msg = {
+                type: 'add_frame',
+                frame: frame,
+                usepool: usepool
+            };
+            var transferrables = (frame instanceof THREEcapFrame ? [msg.frame.buffer] : undefined);
+            this.worker.postMessage(msg, transferrables);
+        } else {
+            console.log('add frame', this.frames.length, frame.width + 'x' + frame.height);
+            if (usepool !== false) {
+              var compressed = this.getCompressedFrame(frame);
+              this.frames.push(compressed);
+              this.releaseFrame(frame);
+            } else {
+              var compressedframe = this.getFrame();
+              var bindata = atob(frame);
+              compressedframe.buffer = compressedframe.buffer.slice(0, bindata.length);
+              var framedata = compressedframe.data;
+              
+              for (var i = 0; i < bindata.length; i++) {
+                  framedata[i] = bindata.charCodeAt(i);
+              }
+              this.frames.push(compressedframe);
+            }
+        }
     }
 };
+THREEcap.prototype.addFrameBase64 = function(framestr) {
+    if (framestr) {
+        if (this.useWorker && !this.inWorker) {
+            var msg = {
+                type: 'add_frame_base64',
+                framestr: framestr
+            };
+            this.worker.postMessage(msg);
+        } else {
+            //console.log('add base64 frame', this.frames.length, framestr.length);
+            var compressedframe = this.getFrame();
+            var bindata = atob(framestr);
+            compressedframe.buffer = compressedframe.buffer.slice(0, bindata.length);
+            var framedata = compressedframe.data;
+            
+            for (var i = 0; i < bindata.length; i++) {
+                framedata[i] = bindata.charCodeAt(i);
+            }
+            this.frames.push(compressedframe);
+        }
+    }
+};
+
+THREEcap.prototype.addFrameFromTHREE = function(renderer, target) {
+    var frame = this.getFrame();
+    if (target) {
+        renderer.readRenderTargetPixels(target, 0, 0, target.width, target.height, frame.data);
+    } else {
+        var gl = renderer.getContext();
+        gl.readPixels( 0, 0, renderer.width, renderer.height, gl.RGBA, gl.UNSIGNED_BYTE, frame.data );
+    }
+    return this.addFrame(frame, true);
+};
+
+THREEcap.prototype.addFrameFromCanvas = function(canvas) {
+    this.srcformat = 'png';
+    // var header = "data:image/png;base64,";
+    var imgdata = canvas.toDataURL('image/png').substr(22);
+    return this.addFrameBase64(imgdata, false);
+};
+
+THREEcap.prototype.getFrameFromData = function(framedata) {
+    var frame = framedata;
+    if (framedata instanceof CanvasRenderingContext2D) {
+        var ctx = framedata;
+        frame = new THREEcapFrame(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height));
+    } else if (framedata instanceof ImageData) {
+        // The user already allocated memory, just use that
+        frame = new THREEcapFrame(frame);
+    }
+    return frame;
+};
+
 THREEcap.prototype.releaseFrame = function(frame) {
     if (this.inWorker) {
         var msg = {
@@ -88,10 +158,16 @@ THREEcap.prototype.handleWorkerRequest = function(ev) {
     var msg = ev.data;
     switch (msg.type) {
         case 'add_frame':
-            this.addFrame(new THREEcapFrame(msg.frame.width, msg.frame.height, msg.frame.depth, msg.frame.buffer));
+            this.addFrame(new THREEcapFrame(msg.frame.width, msg.frame.height, msg.frame.depth, msg.frame.buffer), msg.usepool);
+            break;
+        case 'add_frame_base64':
+            this.addFrameBase64(msg.framestr);
             break;
         case 'render':
             this.render(msg);
+            break;
+        case 'info':
+            this.info(msg);
             break;
         case 'resize':
             this.setSize(msg.width, msg.height);
@@ -118,8 +194,7 @@ THREEcap.prototype.device_input_open = function(stream) { console.log('INPUT DEV
 THREEcap.prototype.device_input_close = function(stream) { 
     console.log('INPUT DEVICE CLOSED', stream, this.outputsize); 
     //this.processResults([ { data: this.outputbuffer.subarray(0, this.outputsize) } ]);
-    var foo = this.FS.readFile('/output/output.mp4');
-    console.log('got a file', foo);
+    var foo = this.FS.readFile('/output/output.' + this.dstformat);
     this.processResults([ { data: foo } ]);
 };
 THREEcap.prototype.device_input_read = (function() {
@@ -130,7 +205,7 @@ THREEcap.prototype.device_input_read = (function() {
     return function(stream, buffer, offset, length, position) { 
         //console.log('DEVICE IS READING', stream, buffer, offset, length, position); 
 
-        //console.log('reading frame ' + currframe + ' of ' + this.expectedframes + ' expected');
+        //console.log('reading frame ' + currframe + ' of ' + this.expectedframes + ' expected', length);
         if (currframe < this.expectedframes) {
             if (currframe < this.frames.length) {
               this.started = true;
@@ -140,16 +215,14 @@ THREEcap.prototype.device_input_read = (function() {
               }
               
 
-              var maxlength = Math.min(framedata.byteLength - curroffset, bufsize, length);
+              var maxlength = Math.min(framedata.length - curroffset, bufsize, length);
               var written = 0;
-              for (var i = 0; i < maxlength; i += 3) {
-                  buffer[offset + i        ] = framedata[curroffset        ];
-                  buffer[offset + i + 1] = framedata[curroffset + 1];
-                  buffer[offset + i + 2] = framedata[curroffset + 2];
-                  curroffset += 3;
-                  written += 3;
+              for (var i = 0; i < maxlength; i ++) {
+                  buffer[offset + i] = framedata[curroffset];
+                  curroffset++;
+                  written++;
               }
-              //console.log('stdin: frame ' + currframe + ', offset ' + curroffset, maxlength);
+              //console.log('stdin: frame ' + currframe + ', offset ' + curroffset, maxlength, framedata.byteLength, written);
               //curroffset += maxlength;
               if (curroffset == framedata.byteLength) {
                   //console.log('finished frame:', currframe);
@@ -230,20 +303,30 @@ THREEcap.prototype.render = function(settings) {
         fps = settings.fps || this.fps,
         width = settings.width || this.width,
         height = settings.height || this.height,
-        time = settings.time || this.time;
+        time = settings.time || this.time,
+        srcformat = settings.srcformat || this.srcformat,
+        dstformat = settings.dstformat || this.dstformat;
 
     this.width = width;
     this.height = height;
+    this.srcformat = srcformat;
+    this.dstformat = dstformat;
 
     //this.framepool = new THREEcapFramePool(this.width, this.height, 4);
     //this.compressedpool = new THREEcapFramePool(this.width, this.height, 3);
 
 console.log('RENDER CALLED', settings, width, height, fps, quality, time);
     this.expectedframes = fps * time;
+/*
+    this.currentframe = 0;
+    this.outputpos = 0;
+    this.frames = [];
+*/
+    
     if (this.useWorker) {
-        this.worker.postMessage({type: 'render', quality: quality, fps: fps, width: width, height: height, time: time});
+        this.worker.postMessage({type: 'render', quality: quality, fps: fps, width: width, height: height, time: time, srcformat: srcformat, dstformat: dstformat});
     } else {
-        var args = {
+        var program = {
             stdin: function() { }.bind(this),
             initDevice: function(FS, ERRNO_CODES) {
                 this.FS = FS;
@@ -262,34 +345,63 @@ console.log('RENDER CALLED', settings, width, height, fps, quality, time);
                     llseek: this.device_output_llseek.bind(this),
                 });
                 FS.mkdev('/input.raw', dev_input);
-                //FS.mkdev('/output/output.mp4', dev_output);
+                //FS.mkdev('/output/output', dev_output);
             }.bind(this),
-            arguments: [
-                '-vcodec', 'rawvideo',
-                '-f', 'rawvideo',
-                '-framerate', fps.toString(),
-                '-pix_fmt', 'rgb24',
-                '-s', width + 'x' + height,
-                '-i', '/input.raw',
-                '-c:v', 'libx264',
-                '-pix_fmt', 'yuv420p',
-                //'-movflags', '+faststart',
-                '-preset', quality,
-                '-s', Math.floor(width / 2) * 2 + 'x' + Math.floor(height / 2) * 2,
-                '-y',
-                'output.mp4'
-            ],
             memoryInitializerPrefixURL: this.scriptbase 
         };
 
-        ffmpeg_run(args);
+        var args = [
+          '-framerate', fps.toString(),
+          '-s', width + 'x' + height,
+        ];
+        if (srcformat == 'raw') {
+          args = args.concat([
+            '-vcodec', 'rawvideo',
+            '-f', 'rawvideo',
+            '-pix_fmt', 'rgb24'
+          ]);
+        } else if (srcformat == 'png') {
+          args = args.concat([
+            '-f', 'image2pipe',
+            '-vcodec', 'png',
+            '-pix_fmt', 'rgb32'
+          ]);
+        }
+        args = args.concat([
+          '-i', '/input.raw',
+        ]);
+
+        if (dstformat == 'mp4') {
+          args = args.concat([
+            '-c:v', 'libx264',
+            '-pix_fmt', 'yuv420p',
+            //'-movflags', '+faststart',
+            '-preset', quality,
+            '-y',
+          ]);
+        } else if (dstformat == 'gif') {
+          args = args.concat([
+            '-c:v', 'gif',
+          ]);
+        }
+        args.push('output.' + dstformat);
+
+        program.arguments = args;
+
+        ffmpeg_run(program);
 
     }
 };
 
 THREEcap.prototype.processResults = function(results) {
     if (results && results.length > 0) {
-        var blob = new Blob([results[0].data], { type: 'video/mp4' });
+        var mimetypes = {
+            'mp4': 'video/mp4',
+            'gif': 'image/gif',
+            'mpg': 'video/mpeg',
+        };
+        //var blob = new Blob([results[0].data], { type: 'video/mp4' });
+        var blob = new Blob([results[0].data], { type: mimetypes[this.dstformat] });
         if (this.inWorker) {
             var msg = {type: 'render_results', data: blob};
             postMessage(msg);
@@ -304,6 +416,21 @@ THREEcap.prototype.processResults = function(results) {
         }
     }
 };
+THREEcap.prototype.info = function() {
+    if (this.useWorker && !this.inWorker) {
+        this.worker.postMessage({type: 'info'});
+    } else {
+        var args = {
+            stdin: function() { }.bind(this),
+            arguments: [
+                '-codecs'
+            ],
+            memoryInitializerPrefixURL: this.scriptbase 
+        };
+
+        ffmpeg_run(args);
+    }
+}
 
 THREEcap.prototype.on = function(event, callback) {
   this.events[event] = callback;
@@ -312,7 +439,7 @@ THREEcap.prototype.on = function(event, callback) {
 /**
  * THREEcapFrame - describes a transferrable frame object
  */
-function THREEcapFrame(width, height, depth, buffer) {
+function THREEcapFrame(width, height, depth, buffer, base64) {
     if (width instanceof ImageData || width instanceof Object) {
       var img = width;
       this.width = img.width;

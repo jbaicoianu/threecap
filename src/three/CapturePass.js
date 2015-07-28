@@ -88,9 +88,8 @@ THREEcapPass.prototype = {
 
 	},
 
-	getCaptureData: function(width, height) {
+	updateCaptureData: function(width, height) {
 		var readBuffer = this.lastframe;
-		var imgdata = false;
 		if (readBuffer) {
 			var target = this.recordtarget;
       var size = [width, height];
@@ -100,9 +99,16 @@ THREEcapPass.prototype = {
 			this.uniforms[ "tDiffuse" ].value = readBuffer;
 			this.quad.material = this.flipmaterial;
 			this.renderer.render( this.scene, this.camera, target, false );
+      return true;
+    }
+    return false;
+  },
 
+	getCaptureData: function(width, height) {
+		var imgdata = false;
+		if (this.updateCaptureData(width, height)) {
       imgdata = this.threecap.getFrame();
-			this.renderer.readRenderTargetPixels(target, 0, 0, size[0], size[1], imgdata.data);
+			this.renderer.readRenderTargetPixels(this.recordtarget, 0, 0, width, height, imgdata.data);
 		}
 		return imgdata;
 	},
@@ -134,40 +140,24 @@ THREEcapPass.prototype = {
 			}
 		}.bind(this));
 	},
-	captureGIF: function(width, height, frames, delay) {
-		return new Promise(function(resolve, reject) {
-			var framepromises = [];
-			for (var i = 0; i < frames; i++) {
-				framepromises.push(this.scheduleGIFframe(width, height, i, delay * i));
-			}
-			Promise.all(framepromises).then(function(frames) {
-				var start = performance.now();
-				var gif = new GIF({workers: 2, quality: 10});
-				for (var i = 0; i < frames.length; i++) {
-					gif.addFrame(frames[i].image, {delay: (i == frames.length - 1 ? delay * 8 : delay)});
-				}
-				gif.on('finished', function(blob) {
-					var end = performance.now();
-					resolve({image: blob, time: end - start});
-				});
-				gif.render();
-			});
-		}.bind(this));
-	},
-	scheduleGIFframe: function(width, height, frame, delay) {
+	scheduleFrame: function(width, height, frame, delay) {
 		return new Promise(function(resolve, reject) {
 			setTimeout(function() { 
-				//console.log('get frame', frame);
-				var imgdata = this.getCaptureData(width, height);
-				if (imgdata) {
-					resolve({frame: frame, image: imgdata});
-				} else {
-					reject();
-				}
+        if (this.updateCaptureData(width, height)) {
+          var imgdata = this.threecap.addFrameFromTHREE(this.renderer, this.recordtarget);
+          //var imgdata = this.threecap.addFrameFromCanvas(this.renderer.domElement);
+          resolve({frame: frame, image: imgdata});
+        }
 			}.bind(this), delay);
 		}.bind(this));
 	},
 	captureMP4: function(width, height, fps, time) {
+    return this.captureVideo(width, height, fps, time, 'mp4');
+  },
+	captureGIF: function(width, height, fps, time) {
+    return this.captureVideo(width, height, fps, time, 'gif');
+  },
+	captureVideo: function(width, height, fps, time, format) {
 		var delay = 1000 / fps;
 		var numframes = time * fps;
 		return new Promise(function(resolve, reject) {
@@ -175,29 +165,27 @@ THREEcapPass.prototype = {
       var threecap = this.threecap;
       var size = this.threecap.getScaledSize([this.lastframe.width, this.lastframe.height], [width, height]);
       threecap.setSize(size[0], size[1]);
-console.log('size yeah!', size);
+
       /* FIXME - there's got to be a better way to schedule frames */
 			for (var i = 0; i < numframes; i++) {
-				var promise = this.scheduleGIFframe(size[0], size[1], i, delay * i);
+				var promise = this.scheduleFrame(size[0], size[1], i, delay * i);
 				framepromises.push(promise);
-				promise.then(function(framedata) {
-					threecap.addFrame(framedata.image);
-				});
 			}
-      var startframe = Math.min(1, framepromises.length-1);
+      var startframe = Math.min(10, framepromises.length-1);
 			framepromises[startframe].then(function(f) {
 				var start = performance.now();
 				threecap.on('finished', function(blob) {
 					var end = performance.now();
 					resolve({file: blob, time: end - start});
 				});
-console.log('FIRST', width, height, f.image.data.length, f.image, f.image.width, f.image.height);
 				threecap.render({
-          width: f.image.width,
-          height: f.image.height,
+          //width: f.image.width,
+          //height: f.image.height,
           fps: fps,
           time: time,
-          quality: 'ultrafast'
+          quality: 'ultrafast',
+          //srcformat: 'png'
+          dstformat: format
         });
 			});
 		}.bind(this));
