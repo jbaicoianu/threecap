@@ -12,7 +12,6 @@ Here's a fancy diagram:
 ## Why would you do this?
 Initially, I started this project as a joke, my hobby is making JavaScript do things it was never intended for.  I thought surely it would be ridiculous, there's no way I could encode video in my browser at any sort of reasonable speed, right?  Turns out I was wrong.  On my laptop I can capture and encode 30fps 480p mp4 video in realtime, 720p encodes at around 10fps.
 
-## What use is this?
 Some people might argue that you could do the same as this tool using a desktop app like [Fraps](http://www.fraps.com/) to capture videos like this.  That's true of course, but by using Threecap you can offer this functionality to all users of your project, allowing them to record gifs and videos of their gameplay to share with friends.  Using a system like [Elation Share](https://github.com/jbaicoianu/elation-share) you can upload these videos and images directly to cloud services like [Dropbox](http://www.dropbox.com), [Google Drive](http://drive.google.com/), [Youtube](http://youtube.com/), [Imgur](http://imgur.com/), etc.
 
 ## Who is responsible for this?
