@@ -1,7 +1,7 @@
 # threecap
 
 ## What is this?
-Threecap is a library which allows you to capture the output of a Three.js app or a 2d canvas.  Threecap runs entirely in the browser, and is capable of outputing full-motion h264 MP4s, GIF, Ogg Theora, VP7, VP8, VP9, WebM, and even FLV.
+Threecap is a library which allows you to capture the output of a Three.js app or a 2d canvas.  Threecap runs entirely in the browser, and is capable of outputing full-motion h264 MP4, GIF, Ogg Theora, VP7, VP8, VP9, WebM, and even FLV files.
 
 ## How does this work?
 Threecap makes use of [FFmpeg](https://www.ffmpeg.org/) for video encoding.  FFmpeg has been cross-compiled to work with JavaScript using [Emscripten](https://github.com/kripken/emscripten), thanks to the work of the [videoconverter.js](https://bgrins.github.io/videoconverter.js/) project.  All of the hard work happens in a worker thread, which allows the encoder to run without impacting the app's framerate. 
