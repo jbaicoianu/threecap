@@ -22,7 +22,7 @@ Example usage:
   });
 ```
 
-Here's a fancy diagram:
+Here's a fancy diagram showing how it works:
 ![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
 
 ## Why would you do this?
