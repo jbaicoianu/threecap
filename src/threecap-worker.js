@@ -1,4 +1,4 @@
 importScripts('threecap.js', 'ffmpeg.js');
 
-var threecap = new THREEcap({inWorker: true});
-onmessage = threecap.handleWorkerRequest.bind(threecap);
+var video = new THREEcapVideo({inWorker: true});
+onmessage = video.handleWorkerRequest.bind(video);
