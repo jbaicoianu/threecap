@@ -9,6 +9,22 @@ Threecap makes use of [FFmpeg](https://www.ffmpeg.org/) for video encoding.  FFm
 Here's a fancy diagram:
 ![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
 
+#### Arguments
+```js
+  var threecap = new THREEcap();
+  threecap.record({
+    width: 640,
+    height: 480,
+    fps: 25,
+    time: 10,
+    format: 'mp4',
+    //canvas: canvasDomElement,   // optional, slowest
+    renderpass: threeRenderPass // optional, fastest
+  }).then(function(video) {
+    video.saveFile('myVideo.mp4');
+  });
+```
+
 ## Why would you do this?
 Initially, I started this project as a joke, my hobby is making JavaScript do things it was never intended for.  I thought surely it would be ridiculous, there's no way I could encode video in my browser at any sort of reasonable speed, right?  Turns out I was wrong.  On my laptop I can capture and encode 30fps 480p mp4 video in realtime, 720p encodes at around 10fps.
 
