@@ -9,7 +9,7 @@ Threecap makes use of [FFmpeg](https://www.ffmpeg.org/) for video encoding.  FFm
 Here's a fancy diagram:
 ![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
 
-#### Arguments
+Example usage:
 ```js
   var threecap = new THREEcap();
   threecap.record({
