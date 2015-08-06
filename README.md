@@ -6,9 +6,6 @@ Threecap is a library which allows you to capture the output of a Three.js app o
 ## How does this work?
 Threecap makes use of [FFmpeg](https://www.ffmpeg.org/) for video encoding.  FFmpeg has been cross-compiled to work with JavaScript using [Emscripten](https://github.com/kripken/emscripten), thanks to the work of the [videoconverter.js](https://bgrins.github.io/videoconverter.js/) project.  All of the hard work happens in a worker thread, which allows the encoder to run without impacting the app's framerate. 
 
-Here's a fancy diagram:
-![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
-
 Example usage:
 ```js
   var threecap = new THREEcap();
@@ -24,6 +21,9 @@ Example usage:
     video.saveFile('myVideo.mp4');
   });
 ```
+
+Here's a fancy diagram:
+![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
 
 ## Why would you do this?
 Initially, I started this project as a joke, my hobby is making JavaScript do things it was never intended for.  I thought surely it would be ridiculous, there's no way I could encode video in my browser at any sort of reasonable speed, right?  Turns out I was wrong.  On my laptop I can capture and encode 30fps 480p mp4 video in realtime, 720p encodes at around 10fps.
