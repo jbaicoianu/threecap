@@ -222,7 +222,7 @@
               '4m': 240, 
               '5m': 300
             },
-            formats = ['mp4', 'gif'];
+            formats = {'mp4': 'mp4', 'gif': 'gif', 'webm': 'webm'};
 
         var select_resolution = createDropdown('Resolution', resolutions, recordsettings.resolution);
         var select_framerate = createDropdown('Framerate', framerates, recordsettings.framerate);
@@ -240,7 +240,7 @@
         panel.appendChild(select_resolution);
         panel.appendChild(select_framerate);
         panel.appendChild(select_time);
-        //panel.appendChild(select_format);
+        panel.appendChild(select_format);
         panel.appendChild(input_filename);
 
         var button = document.createElement('button');
@@ -302,18 +302,25 @@
         var res = recordsettings.resolution.split('x'),
             fps = parseInt(recordsettings.framerate),
             time = parseInt(recordsettings.time),
+            format = recordsettings.format,
             fname = recordsettings.filename;
 
         if (recordsettings.resolution == 'canvas') {
           res = [renderer.domElement.width, renderer.domElement.height];
         }
 
-        capture.settings.renderpass.captureMP4(res[0], res[1], fps, time).then(function(n) { 
-          button.innerHTML = 'Record';
-          button.className = '';
-          recordsettings['filename'] = getTimestampedFilename('threecap');
-          saveFile(fname, n.file);
-        })
+        capture.record({
+            width: res[0], 
+            height: res[1],
+            fps: fps,
+            format: format,
+            time: time
+          }).then(function(video) { 
+            button.innerHTML = 'Record';
+            button.className = '';
+            recordsettings['filename'] = getTimestampedFilename('threecap');
+            saveFile(fname, video.file);
+          });
         setTimeout(function() {
           button.innerHTML = 'Encoding...';
         }, time * 1000);
