@@ -9,6 +9,59 @@
 				background-color: #000000;
 				overflow: hidden;
 			}
+
+      #recordpanel {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        padding: .5em;
+        background: rgba(255,255,255,.75);
+        border-top: 1px solid black;
+        border-left: 1px solid black;
+        font-family: monospace;
+        text-align: center;
+      }
+      #recordpanel h2 {
+        margin: 0 0 .25em 0;
+        border-bottom: 1px solid black;
+        font-size: 1.2em;
+      }
+      #recordpanel div {
+        text-align: left;
+      }
+      #recordpanel label {
+        width: 6em;
+        display: inline-block;
+      }
+      #recordpanel button {
+        margin-top: .5em;
+        width: 100%;
+      }
+      #recordpanel button::before {
+        display: inline-block;
+        content: '⚫';
+        margin-right: .3em;
+        color: rgba(156,25,25,1);
+      }
+      #recordpanel a {
+        display: block;
+      }
+      #recordpanel button.state_recording::before {
+        animation: pulse 1s linear infinite;
+      }
+      @keyframes pulse {
+       0% {
+          color: rgba(165, 25, 25, 1);
+       }
+       50% {
+          color: rgba(165,25,25,0.0);
+       }
+       100% {
+          color: rgba(165, 25, 25, 1);
+       }
+      }
+      
 		</style>
 	</head>
 	<body>
@@ -31,6 +84,16 @@
 			var camera, scene, renderer, composer;
       var capture;
 			var object, light;
+
+      var recordsettings = {
+        resolution: '352x240',
+        framerate: 25,
+        time: 5,
+        format: 'mp4',
+        filename: getTimestampedFilename('threecap'),
+      };
+      var recordpanel = document.createElement('div');
+
 
 			init();
 			animate();
@@ -86,7 +149,7 @@
 				effect.uniforms[ 'amount' ].value = 0.0015;
 				composer.addPass( effect );
 
-        var capturepass = new THREEcapRenderPass();
+        var capturepass = new THREEcapRenderPass('../build/');
 				capturepass.renderToScreen = true;
 				composer.addPass( capturepass );
 
@@ -96,6 +159,7 @@
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
+        createRecordPanel();
 			}
 
 			function onWindowResize() {
@@ -118,6 +182,163 @@
 
 			}
 
+      function createRecordPanel() {
+        var panel = recordpanel;
+        panel.id = 'recordpanel';
+
+        var h2 = document.createElement('h2');
+        h2.innerHTML = 'THREEcap Settings';
+        panel.appendChild(h2);
+
+        var resolutions = {
+              'canvas': 'canvas', 
+              '240p': '352x240', 
+              '360p': '480x360', 
+              '480p': '858x480', 
+              '720p': '1280x720', 
+              '1080p': '1920x1080', 
+            },
+            framerates = {
+              '1 fps': 1,
+              '2 fps': 2,   
+              '5 fps': 5, 
+              '10 fps': 10, 
+              '15 fps': 15, 
+              '25 fps': 25, 
+              '30 fps': 30, 
+              '45 fps': 45, 
+              '60 fps': 60
+            },
+            times = {
+              '5s': 5,
+              '10s': 10, 
+              '15s': 10,
+              '30s': 30, 
+              '45s': 45, 
+              '1m': 60,
+              '1m30s': 90,
+              '2m': 120, 
+              '3m': 180, 
+              '4m': 240, 
+              '5m': 300
+            },
+            formats = ['mp4', 'gif'];
+
+        var select_resolution = createDropdown('Resolution', resolutions, recordsettings.resolution);
+        var select_framerate = createDropdown('Framerate', framerates, recordsettings.framerate);
+        var select_time = createDropdown('Time', times, recordsettings.time);
+        var select_format = createDropdown('Format', formats, recordsettings.format);
+
+        var input_filename = createInput('Filename', recordsettings.filename);
+
+        select_resolution.addEventListener('change', updateRecordSetting.bind(window, 'resolution'));
+        select_framerate.addEventListener('change', updateRecordSetting.bind(window, 'framerate'));
+        select_time.addEventListener('change', updateRecordSetting.bind(window, 'time'));
+        select_format.addEventListener('change', updateRecordSetting.bind(window, 'format'));
+        input_filename.addEventListener('change', updateRecordSetting.bind(window, 'filename'));
+
+        panel.appendChild(select_resolution);
+        panel.appendChild(select_framerate);
+        panel.appendChild(select_time);
+        //panel.appendChild(select_format);
+        panel.appendChild(input_filename);
+
+        var button = document.createElement('button');
+        button.addEventListener('click', handleButtonClick);
+        button.innerHTML = 'Record';
+        panel.appendChild(button);
+
+        document.body.appendChild(panel);
+      }
+      function createDropdown(labeltext, options, selected) {
+        var container = document.createElement('div');
+
+        var label = document.createElement('label');
+        var select = document.createElement('select');
+
+        label.innerHTML = labeltext;
+        label.for = select;
+        container.appendChild(label);
+
+        var optionnames = Object.keys(options);
+        
+        optionnames.forEach(function(o) {
+          var option = document.createElement('option');
+          option.value = options[o];
+          option.innerHTML = o;
+          if (selected && selected == options[o]) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+        container.appendChild(select);
+
+        return container;
+      }
+      function createInput(labeltext, value) {
+        var container = document.createElement('div');
+
+        var label = document.createElement('label');
+        var input = document.createElement('input');
+
+        label.innerHTML = labeltext;
+        label.for = input;
+        container.appendChild(label);
+
+        input.value = value;
+        container.appendChild(input);
+
+        return container;
+      }
+
+      function updateRecordSetting(setting, ev) {
+        recordsettings[setting] = ev.target.value;
+      }
+      function handleButtonClick(ev) {
+        console.log('bling', recordsettings);
+        var button = ev.target;
+        button.innerHTML = 'Recording...';
+        button.className = 'state_recording';
+        var res = recordsettings.resolution.split('x'),
+            fps = parseInt(recordsettings.framerate),
+            time = parseInt(recordsettings.time),
+            fname = recordsettings.filename;
+
+        if (recordsettings.resolution == 'canvas') {
+          res = [renderer.domElement.width, renderer.domElement.height];
+        }
+
+        capture.settings.renderpass.captureMP4(res[0], res[1], fps, time).then(function(n) { 
+          button.innerHTML = 'Record';
+          button.className = '';
+          recordsettings['filename'] = getTimestampedFilename('threecap');
+          saveFile(fname, n.file);
+        })
+        setTimeout(function() {
+          button.innerHTML = 'Encoding...';
+        }, time * 1000);
+      }
+
+      function getTimestampedFilename(prefix) {
+        var d = new Date();
+        var ts = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + '_' + d.getHours() + '-' + d.getMinutes() + '-' + d.getSeconds();
+        return prefix + '_' + ts;
+      }
+
+      function saveFile(fname, data) {
+        var a = document.createElement('A');
+        a.innerHTML = fname;
+        recordpanel.appendChild(a);
+        var url = window.URL.createObjectURL(data);
+
+        a.href = url;
+        a.download = fname;
+        a.click();
+console.log('click click!', a);
+        //window.URL.revokeObjectURL(url);
+        //document.body.removeChild(a);
+        
+      }
 		</script>
 
 	</body>
