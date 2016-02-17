@@ -1,6 +1,23 @@
 {
-  "name": "THREEcap",
+  "name": "threecap",
+  "description": "Frame capture library for Three.js",
+  "version": "0.2.0",
+  "main": "build/threecap.js",
+  "author": "James Baicoianu",
+  "license": "MIT",
   "scripts": {
-    "build": "cd src/threecap; cat THREEcapFrame.js THREEcapFramePool.js THREEcap.js THREEcapRenderPass.js THREEcapVideo.js >../../build/threecap.js; cp ../threecap-worker.js ../../build; cp ../../lib/ffmpeg/* ../../build"
-  }
+    "build": "cd src/threecap; cat THREEcapFrame.js THREEcapFramePool.js THREEcap.js THREEcapRenderPass.js THREEcapVideo.js >../../build/threecap.js; cd ..; cp threecap-worker.js ../build; cd ..; cp lib/ffmpeg/* build/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jbaicoianu/threecap"
+  },
+  "keywords": [
+    "three",
+    "three.js",
+    "3d",
+    "webgl",
+    "ffmpeg",
+    "emscripten"
+  ]
 }
