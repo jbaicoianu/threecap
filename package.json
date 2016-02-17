@@ -1,0 +1,6 @@
+{
+  "name": "THREEcap",
+  "scripts": {
+    "build": "cd src/threecap; cat THREEcapFrame.js THREEcapFramePool.js THREEcap.js THREEcapRenderPass.js THREEcapVideo.js >../../build/threecap.js; cp ../threecap-worker.js ../../build; cp ../../lib/ffmpeg/* ../../build"
+  }
+}
