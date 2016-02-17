@@ -48,19 +48,16 @@ THREEcap.prototype.getSetting = function(name, args) {
 THREEcap.prototype.record = function(settings) {
   var recordsettings = this.getSettings(settings);
 
-console.log('RECORD CALLED: ' + recordsettings.width + 'x' + recordsettings.height + '@' + recordsettings.fps + ' for ' + recordsettings.time + 's', recordsettings);
+  console.log('RECORD CALLED: ' + recordsettings.width + 'x' + recordsettings.height + '@' + recordsettings.fps + ' for ' + recordsettings.time + 's', recordsettings);
 
-  var video = new THREEcapVideo(recordsettings);
   return new Promise(function(resolve, reject) {
-    video.on('finished', function(d) { resolve(video); });
+    var video = new THREEcapVideo(recordsettings);
     video.record(recordsettings);
-/*
-.then(function(f) {
-      console.log('done!', f);
-    });
-*/
+    video.on('finished', function(d) { console.log('FINISHED', video); resolve(video); });
   });
 }
 
-
+THREEcap.prototype.play = function(url) {
+  
+}
 

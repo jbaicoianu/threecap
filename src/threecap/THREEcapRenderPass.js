@@ -3,7 +3,7 @@
  */
 
 
-function THREEcapRenderPass() {
+function THREEcapRenderPass(scriptbase) {
 
 	var vertexShader = [
 		'varying vec2 vUv;',
@@ -60,7 +60,7 @@ function THREEcapRenderPass() {
 	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
 	this.scene.add( this.quad );
 
-	this.threecap = new THREEcap({useWorker: true, quality: 'veryfast', fps: 30, scriptbase: 'js/threecap/'});
+	this.threecap = new THREEcap({useWorker: true, quality: 'veryfast', fps: 30, scriptbase: scriptbase, renderpass: this});
 };
 
 THREEcapRenderPass.prototype = {
@@ -152,27 +152,18 @@ THREEcapRenderPass.prototype = {
 		return new Promise(function(resolve, reject) {
 			var framepromises = [];
       var threecap = this.threecap;
-      var size = this.threecap.getScaledSize([this.lastframe.width, this.lastframe.height], [width, height]);
-      threecap.setSize(size[0], size[1]);
+      //var size = this.threecap.getScaledSize([this.lastframe.width, this.lastframe.height], [width, height]);
+      //threecap.setSize(size[0], size[1]);
 
-      var promises = this.threecap.scheduleFrames(width[0], width[1], fps, time);
-      var startframe = Math.min(10, framepromises.length-1);
-			framepromises[startframe].then(function(f) {
-				var start = performance.now();
-				threecap.on('finished', function(blob) {
-					var end = performance.now();
-					resolve({file: blob, time: end - start});
-				});
-				threecap.record({
-          //width: f.image.width,
-          //height: f.image.height,
-          fps: fps,
-          time: time,
-          quality: 'ultrafast',
-          //srcformat: 'png'
-          dstformat: format
-        });
-			});
+      threecap.record({
+        width: width,
+        height: height,
+        fps: fps,
+        time: time,
+        quality: 'ultrafast',
+        //srcformat: 'png'
+        format: format
+      }).then(resolve, reject);
 		}.bind(this));
 	},
 	encodeImage: function(pixeldata, width, height, format) {
