@@ -8,6 +8,9 @@ Threecap makes use of [FFmpeg](https://www.ffmpeg.org/) for video encoding.  FFm
 
 Example usage:
 ```js
+  var composer = new THREE.EffectsComposer();
+  // set up effects passes for your app here
+
   var threecap = new THREEcap();
   threecap.record({
     width: 640,
@@ -16,7 +19,7 @@ Example usage:
     time: 10,
     format: 'mp4',
     //canvas: canvasDomElement,   // optional, slowest
-    renderpass: threeRenderPass // optional, fastest
+    composer: composer // optional, fastest
   }).then(function(video) {
     video.saveFile('myVideo.mp4');
   });
