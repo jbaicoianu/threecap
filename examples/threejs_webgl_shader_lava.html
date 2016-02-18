@@ -30,6 +30,7 @@
 
 			#oldie a { color:#da0 }
 		</style>
+		<link rel="stylesheet" type="text/css" href="../css/threecapui.css" />
 	</head>
 	<body>
 
@@ -51,6 +52,7 @@
 
 		<script src="http://threejs.org/examples/js/Detector.js"></script>
 		<script src="http://threejs.org/examples/js/libs/stats.min.js"></script>
+		<script src="../build/threecap.js"></script>
 
 		<script id="fragmentShader" type="x-shader/x-fragment">
 
@@ -207,6 +209,9 @@
 				composer.addPass( renderModel );
 				composer.addPass( effectBloom );
 				composer.addPass( effectFilm );
+
+				var capture = new THREEcap({composer: composer, scriptbase: '../build/'});
+				var captureui = new THREEcapUI(capture);
 
 				//
 
