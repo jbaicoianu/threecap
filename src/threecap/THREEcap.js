@@ -18,13 +18,17 @@ function THREEcap(args) {
     inWorker: false,
     scriptbase: '',
     canvas: false,
+    composer: false,
     renderpass: false
   };
 
   // Update settings with passed-in values
   this.settings = this.getSettings(args);
 
-  console.log('new THREEcap instance', this.settings);
+
+  if (this.settings.composer) {
+    this.attachComposer(this.settings.composer);
+  }
 }
 
 THREEcap.prototype.getSettings = function(args) {
@@ -55,6 +59,22 @@ THREEcap.prototype.record = function(settings) {
     video.record(recordsettings);
     video.on('finished', function(d) { console.log('FINISHED', video); resolve(video); });
   });
+}
+THREEcap.prototype.attachComposer = function(composer) {
+ console.log('do it!', composer, this);
+  var capturepass = new THREEcapRenderPass(this.settings.scriptbase);
+
+  this.settings.renderpass = capturepass;
+
+  //composer.passes.forEach(function(pass) { if (pass.renderToScreen) pass.renderToScreen = false; });
+  for (var i = composer.passes.length-1; i >= 0; i--) {
+    if (composer.passes[i].renderToScreen) {
+      composer.passes[i].renderToScreen = false;
+      break;
+    }
+  }
+  composer.addPass( capturepass );
+  capturepass.renderToScreen = true;
 }
 
 THREEcap.prototype.play = function(url) {
