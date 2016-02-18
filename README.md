@@ -25,6 +25,12 @@ Example usage:
   });
 ```
 
+## Sample Output
+![AugmentedPerception.com - GIF, 640x360, 12s](http://jbaicoianu.github.io/threecap/images/threecap-example-augmentedperception.gif "AugmentedPerception.com - GIF, 640x360, 12s")
+
+![Sample GIF](http://jbaicoianu.github.io/threecap/images/threecap-example-asteroids.gif)
+
+
 Here's a fancy diagram showing how it works:
 ![System Architecture](https://raw.githubusercontent.com/wiki/jbaicoianu/threecap/media/threecap_system_architecture.png)
 
