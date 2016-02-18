@@ -1,0 +1,53 @@
+#recordpanel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: .5em;
+  background: rgba(255,255,255,.75);
+  border-top: 1px solid black;
+  border-left: 1px solid black;
+  font-family: monospace;
+  text-align: center;
+}
+#recordpanel h2 {
+  margin: 0 0 .25em 0;
+  border-bottom: 1px solid black;
+  font-size: 1.2em;
+}
+#recordpanel div {
+  text-align: left;
+}
+#recordpanel label {
+  width: 6em;
+  display: inline-block;
+}
+#recordpanel button {
+  margin-top: .5em;
+  width: 100%;
+}
+#recordpanel button::before {
+  display: inline-block;
+  content: '⚫';
+  margin-right: .3em;
+  color: rgba(156,25,25,1);
+}
+#recordpanel a {
+  display: block;
+}
+#recordpanel button.state_recording::before {
+  animation: pulse 1s linear infinite;
+}
+@keyframes pulse {
+ 0% {
+    color: rgba(165, 25, 25, 1);
+ }
+ 50% {
+    color: rgba(165,25,25,0.0);
+ }
+ 100% {
+    color: rgba(165, 25, 25, 1);
+ }
+}
+
+
