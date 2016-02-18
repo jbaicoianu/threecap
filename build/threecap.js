@@ -1020,7 +1020,7 @@ THREEcapUI.prototype.handleButtonClick = function(ev) {
     res = [renderer.domElement.width, renderer.domElement.height];
   }
 
-  capture.record({
+  this.capture.record({
       width: res[0], 
       height: res[1],
       fps: fps,
