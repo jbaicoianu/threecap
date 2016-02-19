@@ -25,6 +25,8 @@ Example usage:
   });
 ```
 
+For a simple example of adding capture support to a Three.js app which already uses the EffectsComposer, see [this changelog](https://github.com/jbaicoianu/threecap/commit/72235765c417bca4a04cc4a1e94831c0c3f38094)
+
 ## Sample Output
 ![AugmentedPerception.com - GIF, 640x360, 12s](http://jbaicoianu.github.io/threecap/images/threecap-example-augmentedperception.gif "AugmentedPerception.com - GIF, 640x360, 12s")
 
