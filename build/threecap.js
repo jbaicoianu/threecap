@@ -238,6 +238,8 @@ function THREEcapRenderPass(scriptbase) {
 	this.scene.add( this.quad );
 
 	this.threecap = new THREEcap({useWorker: true, quality: 'veryfast', fps: 30, scriptbase: scriptbase, renderpass: this});
+    
+    this.setSize = function() {}
 };
 
 THREEcapRenderPass.prototype = {
