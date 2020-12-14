@@ -238,8 +238,6 @@ function THREEcapRenderPass(scriptbase) {
 	this.scene.add( this.quad );
 
 	this.threecap = new THREEcap({useWorker: true, quality: 'veryfast', fps: 30, scriptbase: scriptbase, renderpass: this});
-    
-    this.setSize = function() {}
 };
 
 THREEcapRenderPass.prototype = {
@@ -247,7 +245,7 @@ THREEcapRenderPass.prototype = {
 	render: function ( renderer, writeBuffer, readBuffer, delta ) {
 
     this.renderer = renderer;
-		this.uniforms[ "tDiffuse" ].value = readBuffer;
+		this.uniforms[ "tDiffuse" ].value = readBuffer.texture;
 
 		this.quad.material = this.material;
 
@@ -275,9 +273,12 @@ THREEcapRenderPass.prototype = {
 			if (target.width != size[0] || target.height != size[1]) {
 				target.setSize(size[0], size[1]);
 			}
-			this.uniforms[ "tDiffuse" ].value = readBuffer;
+			this.uniforms[ "tDiffuse" ].value = readBuffer.texture;
 			this.quad.material = this.flipmaterial;
-			this.renderer.render( this.scene, this.camera, target, false );
+			let oldtarget = this.renderer.getRenderTarget();
+			this.renderer.setRenderTarget(target);
+			this.renderer.render( this.scene, this.camera );
+			this.renderer.setRenderTarget(oldtarget);
       return true;
     }
     return false;
