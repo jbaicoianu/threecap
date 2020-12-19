@@ -251,11 +251,13 @@ THREEcapRenderPass.prototype = {
 
 		if ( this.renderToScreen ) {
 
+			renderer.setRenderTarget(null);
 			renderer.render( this.scene, this.camera );
 
 		} else {
 
-			renderer.render( this.scene, this.camera, writeBuffer, false );
+			renderer.setRenderTarget(writeBuffer);
+			renderer.render( this.scene, this.camera );
 
 		}
 
