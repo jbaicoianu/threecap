@@ -362,6 +362,8 @@ THREEcapRenderPass.prototype = {
 			};
 			worker.postMessage(workermsg, [workermsg.data]);
 		}.bind(this));
+	},
+	setSize: function() {
 	}
 };
 "use strict";
